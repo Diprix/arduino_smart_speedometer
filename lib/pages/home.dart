@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:unicons/unicons.dart';
 
 class Home extends StatefulWidget {
-  Home({Key? key}) : super(key: key);
+  Home({Key key}) : super(key: key);
 
   @override
   State<Home> createState() => _HomeState();

@@ -1,22 +1,20 @@
 import 'dart:convert';
 
-import 'package:bike_speed/pages/device_list.dart';
-import 'package:bike_speed/pages/disconnected.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:unicons/unicons.dart';
 
-class HomeTest extends StatefulWidget {
+class HomeTestDebug extends StatefulWidget {
   BluetoothDevice dispositivo;
-  HomeTest({@required this.dispositivo, Key key}) : super(key: key);
+  HomeTestDebug({this.dispositivo, Key key}) : super(key: key);
 
   @override
-  State<HomeTest> createState() => _HomeTestState();
+  State<HomeTestDebug> createState() => _HomeTestDebugState();
 }
 
-class _HomeTestState extends State<HomeTest> {
+class _HomeTestDebugState extends State<HomeTestDebug> {
   FlutterBlue flutterBlue = FlutterBlue.instance;
 
   String speed = 's: 0.00/d: 0.0';
@@ -32,81 +30,60 @@ class _HomeTestState extends State<HomeTest> {
   void initState() {
     super.initState();
 
-    readData();
-
+   // readData();
   }
 
-  void readData() async {
-
-    widget.dispositivo.state.forEach((element) {
-
-      switch(element.name){
-        case 'disconnected':
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                  const DisconnectedPage()));
-          break;
-
-      }
-
-    });
-
-
-
-    List<BluetoothService> services =
-        await widget.dispositivo.discoverServices();
-    services.forEach((service) async {
-      var characteristics = service.characteristics;
-      for (BluetoothCharacteristic c in characteristics) {
-        List<int> value = await c.read();
-
-        await c.setNotifyValue(true);
-        c.value.listen((values) {
-
-          debugPrint('values: ${values}');
-          debugPrint('values decoded: ${utf8.decode(values)}');
-          debugPrint('c.deviceId: ${c.deviceId}'); //Importante
-
-          setState(() {
-            //rawData.insert(0, utf8.decode(values));
-            if (utf8.decode(values).contains('s: ') &&
-                utf8.decode(values).contains('/d: ')) {
-              speed = utf8.decode(values);
-              debugPrint('speed: $speed');
-            } else {
-              speed = speed;
-            }
-            if (utf8.decode(values).contains('t: ') &&
-                utf8.decode(values).contains('/c: ')) {
-              battery = utf8.decode(values);
-              debugPrint('battery: $battery');
-            }
-
-            if (utf8.decode(values).contains('thr: ') &&
-                utf8.decode(values).contains('/v: ')) {
-              light = utf8.decode(values);
-              debugPrint('battery: $battery');
-            }
-
-            if (utf8.decode(values).contains('ligth_status: ')) {
-              lightStatus = int.parse(utf8.decode(values).split(': ')[1]);
-            }
-            if (utf8.decode(values).contains('auto_light: ')) {
-              autoLight = int.parse(utf8.decode(values).split(': ')[1]);
-            }
-            if (utf8.decode(values).contains('enable_sensor: ')) {
-              enableLightSensor = int.parse(utf8.decode(values).split(':')[1]);
-              debugPrint('********************* $enableLightSensor **********************');
-
-            }
-
-          });
-        });
-      }
-    });
-  }
+  // void readData() async {
+  //   List<BluetoothService> services =
+  //       await widget.dispositivo!.discoverServices();
+  //   services.forEach((service) async {
+  //     var characteristics = service.characteristics;
+  //     for (BluetoothCharacteristic c in characteristics) {
+  //       List<int> value = await c.read();
+  //
+  //       await c.setNotifyValue(true);
+  //       c.value.listen((values) {
+  //         debugPrint('values: ${values}');
+  //         debugPrint('values decoded: ${utf8.decode(values)}');
+  //         debugPrint('c.deviceId: ${c.deviceId}'); //Importante
+  //
+  //         setState(() {
+  //           //rawData.insert(0, utf8.decode(values));
+  //           if (utf8.decode(values).contains('s: ') &&
+  //               utf8.decode(values).contains('/d: ')) {
+  //             speed = utf8.decode(values);
+  //             debugPrint(speed);
+  //           } else {
+  //             speed = speed;
+  //           }
+  //           if (utf8.decode(values).contains('t: ') &&
+  //               utf8.decode(values).contains('/c: ')) {
+  //             battery = utf8.decode(values);
+  //             debugPrint(battery);
+  //           }
+  //
+  //           if (utf8.decode(values).contains('thr: ') &&
+  //               utf8.decode(values).contains('/v: ')) {
+  //             light = utf8.decode(values);
+  //             debugPrint(battery);
+  //           }
+  //
+  //           if (utf8.decode(values).contains('ligth_status: ')) {
+  //             lightStatus = int.parse(utf8.decode(values).split(': ')[1]);
+  //           }
+  //           if (utf8.decode(values).contains('auto_light: ')) {
+  //             autoLight = int.parse(utf8.decode(values).split(': ')[1]);
+  //           }
+  //           if (utf8.decode(values).contains('enable_sensor: ')) {
+  //             enableLightSensor = int.parse(utf8.decode(values).split(':')[1]);
+  //             debugPrint('********************* $enableLightSensor **********************');
+  //           }
+  //
+  //         });
+  //       });
+  //     }
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +180,7 @@ class _HomeTestState extends State<HomeTest> {
                               onPressed: () {
                                 // Stop scanning
 
-                                readData();
+                               // readData();
                               },
                               icon: const Icon(
                                 UniconsLine.play,
@@ -213,16 +190,16 @@ class _HomeTestState extends State<HomeTest> {
                               onPressed: () async {
                                 //await c.write([0x12, 0x34]);
 
-                                List<BluetoothService> services =
-                                    await widget.dispositivo.discoverServices();
-                                services.forEach((service) async {
-                                  var characteristics = service.characteristics;
-                                  for (BluetoothCharacteristic c
-                                      in characteristics) {
-                                    await c.write(utf8.encode('light_on'));
-
-                                  }
-                                });
+                                // List<BluetoothService> services =
+                                //     await widget.dispositivo.discoverServices();
+                                // services.forEach((service) async {
+                                //   var characteristics = service.characteristics;
+                                //   for (BluetoothCharacteristic c
+                                //       in characteristics) {
+                                //     await c.write(utf8.encode('light_on'));
+                                //
+                                //   }
+                                // });
                               },
                               icon: const Icon(
                                 UniconsLine.lightbulb_alt,
@@ -267,17 +244,17 @@ class _HomeTestState extends State<HomeTest> {
                               leading: IconButton(
                                   onPressed: () async {
                                     //await c.write([0x12, 0x34]);
-
-                                    List<BluetoothService> services =
-                                    await widget.dispositivo.discoverServices();
-                                    services.forEach((service) async {
-                                      var characteristics = service.characteristics;
-                                      for (BluetoothCharacteristic c
-                                      in characteristics) {
-                                        await c.write(utf8.encode('auto_light'));
-
-                                      }
-                                    });
+                                    //
+                                    // List<BluetoothService> services =
+                                    // await widget.dispositivo.discoverServices();
+                                    // services.forEach((service) async {
+                                    //   var characteristics = service.characteristics;
+                                    //   for (BluetoothCharacteristic c
+                                    //   in characteristics) {
+                                    //     await c.write(utf8.encode('auto_light'));
+                                    //
+                                    //   }
+                                    // });
                                   },
                                   icon: Icon(
                                     enableLightSensor == 0 ? UniconsLine.toggle_off : UniconsLine.toggle_on,
@@ -288,16 +265,16 @@ class _HomeTestState extends State<HomeTest> {
                                   onPressed: () async {
                                     //await c.write([0x12, 0x34]);
 
-                                    List<BluetoothService> services =
-                                    await widget.dispositivo.discoverServices();
-                                    services.forEach((service) async {
-                                      var characteristics = service.characteristics;
-                                      for (BluetoothCharacteristic c
-                                      in characteristics) {
-                                        await c.write(utf8.encode('reset_light'));
-
-                                      }
-                                    });
+                                    // List<BluetoothService> services =
+                                    // await widget.dispositivo.discoverServices();
+                                    // services.forEach((service) async {
+                                    //   var characteristics = service.characteristics;
+                                    //   for (BluetoothCharacteristic c
+                                    //   in characteristics) {
+                                    //     await c.write(utf8.encode('reset_light'));
+                                    //
+                                    //   }
+                                    // });
                                   },
                                   icon: const Icon(
                                     UniconsLine.refresh,
@@ -317,16 +294,16 @@ class _HomeTestState extends State<HomeTest> {
                               onTap: () async {
                                 //await c.write([0x12, 0x34]);
 
-                                List<BluetoothService> services =
-                                await widget.dispositivo.discoverServices();
-                                services.forEach((service) async {
-                                  var characteristics = service.characteristics;
-                                  for (BluetoothCharacteristic c
-                                  in characteristics) {
-                                    await c.write(utf8.encode('reset_light'));
-
-                                  }
-                                });
+                                // List<BluetoothService> services =
+                                // await widget.dispositivo.discoverServices();
+                                // services.forEach((service) async {
+                                //   var characteristics = service.characteristics;
+                                //   for (BluetoothCharacteristic c
+                                //   in characteristics) {
+                                //     await c.write(utf8.encode('reset_light'));
+                                //
+                                //   }
+                                // });
                               },
 
                             ),

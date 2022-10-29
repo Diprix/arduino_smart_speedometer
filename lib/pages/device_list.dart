@@ -1,10 +1,16 @@
-import 'package:bike_speed/pages/home_flutter_blue.dart';
+import 'package:bike_speed/pages/apple_map.dart';
+import 'package:bike_speed/pages/google_map_test.dart';
+import 'package:bike_speed/pages/home.dart';
+import 'package:bike_speed/pages/home_flutter_blue_debug.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:unicons/unicons.dart';
 
+import 'home_flutter_blue.dart';
+
 class DeviceList extends StatefulWidget {
-  const DeviceList({Key? key}) : super(key: key);
+  const DeviceList({Key key}) : super(key: key);
 
   @override
   State<DeviceList> createState() => _DeviceListState();
@@ -15,13 +21,40 @@ class _DeviceListState extends State<DeviceList> {
 
   List<ScanResult> lista = [];
 
-  BluetoothDevice? dispositivo;
+  BluetoothDevice dispositivo;
 
   @override
   void initState() {
     super.initState();
 
-    flutterBlue.startScan(timeout: const Duration(seconds: 4));
+    scanDevice();
+
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const CupertinoActivityIndicator(color: Colors.white,),
+            const SizedBox(height: 15,),
+            const Text('Connessione alla bicicletta'),
+
+            const SizedBox(height: 35,),
+            CupertinoButton(child: const Text('Aggiorna'), onPressed: () => scanDevice()),
+          ],
+        ),
+      )
+
+
+    );
+  }
+
+  scanDevice(){
+    flutterBlue.startScan(timeout: const Duration(seconds: 20));
 
     flutterBlue.scanResults.listen((results) {
       // do something with scan results
@@ -30,76 +63,25 @@ class _DeviceListState extends State<DeviceList> {
           if (r.device.name.length > 1 && !lista.contains(r)) {
             lista.add(r);
           }
-          /*if(r.device.id.toString().contains("FA85DC08-2ED3-76B2-9BE0-83B8250C41C3")){
-            r.device.connect();
+
+
+
+          if(r.device.name.toString().contains("DIPRIX_MTB")){
             flutterBlue.stopScan();
+
+            r.device.connect();
             dispositivo = r.device;
 
-          }*/
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        MapUiPage(dispositivo)));
+
+          }
         });
-        print('${r.device.name} found! rssi: ${r.rssi}');
       }
     });
-
-    // flutterBlue.stopScan();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Smart MTB System'),
-        leading: IconButton(
-          icon: const Icon(
-            UniconsLine.refresh,
-            size: 30,
-          ),
-          onPressed: () {
-            flutterBlue.startScan(timeout: const Duration(seconds: 4));
-
-            flutterBlue.scanResults.listen((results) {
-              // do something with scan results
-              for (ScanResult r in results) {
-                setState(() {
-                  if (r.device.name.length > 1 && !lista.contains(r)) {
-                    lista.add(r);
-                  }
-                  /*if(r.device.id.toString().contains("FA85DC08-2ED3-76B2-9BE0-83B8250C41C3")){
-            r.device.connect();
-            flutterBlue.stopScan();
-            dispositivo = r.device;
-
-          }*/
-
-
-                });
-                print('${r.device.name} found! rssi: ${r.rssi}');
-              }
-            });
-          },
-        ),
-      ),
-      body: ListView.builder(
-          itemCount: lista.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              title: Text(lista[index].device.name),
-              subtitle: Text(lista[index].device.id.toString()),
-              onTap: () {
-                lista[index].device.connect();
-
-                dispositivo = lista[index].device;
-
-                flutterBlue.stopScan();
-
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            HomeTest(dispositivo: lista[index].device)));
-              },
-            );
-          }),
-    );
-  }
 }

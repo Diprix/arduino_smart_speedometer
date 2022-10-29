@@ -4,7 +4,7 @@ import 'package:bike_speed/pages/home_flutter_blue.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {
-  const App({Key? key}) : super(key: key);
+  const App({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class App extends StatelessWidget {
 
 
       ),
-      home: const DeviceList()
+      home: const DeviceList(),
     );
   }
 }
