@@ -1,6 +1,4 @@
 import 'package:bike_speed/pages/device_list.dart';
-import 'package:bike_speed/pages/home.dart';
-import 'package:bike_speed/pages/home_flutter_blue.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {

@@ -6,12 +6,17 @@ import 'dart:convert';
 
 import 'package:apple_maps_flutter/apple_maps_flutter.dart';
 import 'package:bike_speed/pages/disconnected.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:unicons/unicons.dart';
 
 import 'page.dart';
+import 'package:wakelock/wakelock.dart';
+
 
 final LatLngBounds sydneyBounds = LatLngBounds(
   southwest: const LatLng(-34.022631, 150.620685),
@@ -46,17 +51,18 @@ class MapUiBodyState extends State<MapUiBody> {
 
   CameraPosition _position = _kInitialPosition;
   bool _isMapCreated = false;
-  bool _isMoving = true;
-  bool _compassEnabled = true;
-  bool _myLocationButtonEnabled = true;
-  MinMaxZoomPreference _minMaxZoomPreference = MinMaxZoomPreference.unbounded;
+  final bool _isMoving = true;
+  final bool _compassEnabled = true;
+  final bool _myLocationButtonEnabled = true;
+  final MinMaxZoomPreference _minMaxZoomPreference = MinMaxZoomPreference.unbounded;
   MapType _mapType = MapType.standard;
-  bool _rotateGesturesEnabled = true;
-  bool _scrollGesturesEnabled = true;
-  bool _pitchGesturesEnabled = true;
-  bool _zoomGesturesEnabled = true;
-  bool _myLocationEnabled = true;
-  TrackingMode _trackingMode = TrackingMode.followWithHeading;
+  final bool _rotateGesturesEnabled = true;
+  final bool _scrollGesturesEnabled = true;
+  final bool _pitchGesturesEnabled = true;
+  final bool _zoomGesturesEnabled = true;
+  final bool _myLocationEnabled = true;
+  bool _enableTraffic = true;
+  final TrackingMode _trackingMode = TrackingMode.followWithHeading;
 
   FlutterBlue flutterBlue = FlutterBlue.instance;
 
@@ -69,12 +75,20 @@ class MapUiBodyState extends State<MapUiBody> {
 
   List<String> rawData = [];
 
+  double batteryMin = 0.00;
+  double batteryMax = 0.00;
+
+
   @override
   void initState() {
     super.initState();
 
-    widget.dispositivo.connect();
+    if (!kDebugMode) {
+      widget.dispositivo.connect();
+    }
+
     readData();
+    Wakelock.enable();
 
   }
 
@@ -83,112 +97,117 @@ class MapUiBodyState extends State<MapUiBody> {
     super.dispose();
   }
 
-  Widget _compassToggler() {
-    return TextButton(
-      child: Text('${_compassEnabled ? 'disable' : 'enable'} compass'),
-      onPressed: () {
-        setState(() {
-          _compassEnabled = !_compassEnabled;
-        });
-      },
-    );
-  }
-
-  Widget _zoomBoundsToggler() {
-    return TextButton(
-      child: Text(_minMaxZoomPreference.minZoom == null
-          ? 'bound zoom'
-          : 'release zoom'),
-      onPressed: () {
-        setState(() {
-          _minMaxZoomPreference = _minMaxZoomPreference.minZoom == null
-              ? const MinMaxZoomPreference(12.0, 16.0)
-              : MinMaxZoomPreference.unbounded;
-        });
-      },
-    );
-  }
-
+  // Widget _compassToggler() {
+  //   return TextButton(
+  //     child: Text('${_compassEnabled ? 'disable' : 'enable'} compass'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _compassEnabled = !_compassEnabled;
+  //       });
+  //     },
+  //   );
+  // }
+  //
+  // Widget _zoomBoundsToggler() {
+  //   return TextButton(
+  //     child: Text(_minMaxZoomPreference.minZoom == null
+  //         ? 'bound zoom'
+  //         : 'release zoom'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _minMaxZoomPreference = _minMaxZoomPreference.minZoom == null
+  //             ? const MinMaxZoomPreference(12.0, 16.0)
+  //             : MinMaxZoomPreference.unbounded;
+  //       });
+  //     },
+  //   );
+  // }
+  //
   Widget _mapTypeCycler() {
     final MapType nextType =
         MapType.values[(_mapType.index + 1) % MapType.values.length];
-    return TextButton(
-      child: Text('change map type to $nextType'),
+    return IconButton(
+      icon:
+      const Icon(Icons.map, color: Colors.blue, size: 30,),
       onPressed: () {
         setState(() {
           _mapType = nextType;
         });
+        Fluttertoast.showToast(
+          msg: nextType.name,
+          fontSize: 15.0,
+        );
       },
     );
   }
-
-  Widget _rotateToggler() {
-    return TextButton(
-      child: Text('${_rotateGesturesEnabled ? 'disable' : 'enable'} rotate'),
-      onPressed: () {
-        setState(() {
-          _rotateGesturesEnabled = !_rotateGesturesEnabled;
-        });
-      },
-    );
-  }
-
-  Widget _scrollToggler() {
-    return TextButton(
-      child: Text('${_scrollGesturesEnabled ? 'disable' : 'enable'} scroll'),
-      onPressed: () {
-        setState(() {
-          _scrollGesturesEnabled = !_scrollGesturesEnabled;
-        });
-      },
-    );
-  }
-
-  Widget _tiltToggler() {
-    return TextButton(
-      child: Text('${_pitchGesturesEnabled ? 'disable' : 'enable'} tilt'),
-      onPressed: () {
-        setState(() {
-          _pitchGesturesEnabled = !_pitchGesturesEnabled;
-        });
-      },
-    );
-  }
-
-  Widget _zoomToggler() {
-    return TextButton(
-      child: Text('${_zoomGesturesEnabled ? 'disable' : 'enable'} zoom'),
-      onPressed: () {
-        setState(() {
-          _zoomGesturesEnabled = !_zoomGesturesEnabled;
-        });
-      },
-    );
-  }
-
-  Widget _myLocationToggler() {
-    return TextButton(
-      child: Text(
-          '${_myLocationEnabled ? 'disable' : 'enable'} my location annotation'),
-      onPressed: () {
-        setState(() {
-          _myLocationEnabled = !_myLocationEnabled;
-        });
-      },
-    );
-  }
-
-  Widget _myLocationButtonToggler() {
-    return TextButton(
-      child: Text(
-          '${_myLocationButtonEnabled ? 'disable' : 'enable'} my location button'),
-      onPressed: () {
-        setState(() {
-          _myLocationButtonEnabled = !_myLocationButtonEnabled;
-        });
-      },
-    );
-  }
+  //
+  // Widget _rotateToggler() {
+  //   return TextButton(
+  //     child: Text('${_rotateGesturesEnabled ? 'disable' : 'enable'} rotate'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _rotateGesturesEnabled = !_rotateGesturesEnabled;
+  //       });
+  //     },
+  //   );
+  // }
+  //
+  // Widget _scrollToggler() {
+  //   return TextButton(
+  //     child: Text('${_scrollGesturesEnabled ? 'disable' : 'enable'} scroll'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _scrollGesturesEnabled = !_scrollGesturesEnabled;
+  //       });
+  //     },
+  //   );
+  // }
+  //
+  // Widget _tiltToggler() {
+  //   return TextButton(
+  //     child: Text('${_pitchGesturesEnabled ? 'disable' : 'enable'} tilt'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _pitchGesturesEnabled = !_pitchGesturesEnabled;
+  //       });
+  //     },
+  //   );
+  // }
+  //
+  // Widget _zoomToggler() {
+  //   return TextButton(
+  //     child: Text('${_zoomGesturesEnabled ? 'disable' : 'enable'} zoom'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _zoomGesturesEnabled = !_zoomGesturesEnabled;
+  //       });
+  //     },
+  //   );
+  // }
+  //
+  // Widget _myLocationToggler() {
+  //   return TextButton(
+  //     child: Text(
+  //         '${_myLocationEnabled ? 'disable' : 'enable'} my location annotation'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _myLocationEnabled = !_myLocationEnabled;
+  //       });
+  //     },
+  //   );
+  // }
+  //
+  // Widget _myLocationButtonToggler() {
+  //   return TextButton(
+  //     child: Text(
+  //         '${_myLocationButtonEnabled ? 'disable' : 'enable'} my location button'),
+  //     onPressed: () {
+  //       setState(() {
+  //         _myLocationButtonEnabled = !_myLocationButtonEnabled;
+  //       });
+  //     },
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -204,13 +223,13 @@ class MapUiBodyState extends State<MapUiBody> {
       zoomGesturesEnabled: _zoomGesturesEnabled,
       myLocationEnabled: _myLocationEnabled,
       myLocationButtonEnabled: _myLocationButtonEnabled,
-      padding: const EdgeInsets.only(top: 70, right: 5),
+      padding: const EdgeInsets.only(top: 45, right: 0),
       onCameraMove: _updateCameraPosition,
 
       /*
       Da inserire in un controllo apposito
        */
-      trafficEnabled: true,
+      trafficEnabled: _enableTraffic,
       mapType: _mapType,
     );
 
@@ -225,7 +244,50 @@ class MapUiBodyState extends State<MapUiBody> {
               padding: const EdgeInsets.all(10),
               width: MediaQuery.of(context).size.width,
               child: speedometer(),
-            )),
+            ),
+        ),
+        Positioned(
+          bottom: 190,
+          left: 15,
+          child: Container(
+            height: 50,
+            width: 50,
+            margin: const EdgeInsets.all(0),
+            decoration: BoxDecoration(
+                color: Colors.white ,
+                borderRadius: BorderRadius.circular(10)
+            ),
+            child: Center(
+              child: _mapTypeCycler()
+            ),
+
+          ),
+        ),
+        Positioned(
+          bottom: 250,
+          left: 15,
+          child: Container(
+            height: 50,
+            width: 50,
+            margin: const EdgeInsets.all(0),
+            decoration: BoxDecoration(
+                color: Colors.white ,
+                borderRadius: BorderRadius.circular(10)
+            ),
+            child: Center(
+                child: IconButton(
+                  icon:
+                  Icon(Icons.car_crash, color: _enableTraffic ? Colors.blue : Colors.grey, size: 30,),
+                  onPressed: () {
+                    setState(() {
+                      _enableTraffic = !_enableTraffic;
+                    });
+                  },
+                )
+            ),
+
+          ),
+        ),
       ],
     ));
   }
@@ -251,6 +313,7 @@ class MapUiBodyState extends State<MapUiBody> {
       ),
       child: Stack(
         children: [
+          ///SPEED
           Positioned(
             bottom: 0,
             top: -50,
@@ -272,28 +335,38 @@ class MapUiBodyState extends State<MapUiBody> {
               ),
             ),
           ),
+          ///BATTERY
           Positioned(
             top: 5,
             right: 100,
-            child: Row(
-              children: [
-                Icon(
-                  UniconsLine.battery_bolt,
-                  size: 30,
-                ),
-                SizedBox(width: 5,),
-                Text(
-                  '${battery.split('t: ')[1].split('/')[0]}v',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ],
+            child: GestureDetector(
+              onLongPress: (){
+                widget.dispositivo.connect();
+                HapticFeedback.heavyImpact();
+
+              },
+              child: Row(
+                children: [
+                  const Icon(
+                    UniconsLine.battery_bolt,
+                    size: 30,
+                  ),
+                  const SizedBox(width: 5,),
+                  Text(
+                    '${battery.split('t: ')[1].split('/')[0]}v',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                ],
+              ),
             ),
           ),
+          ///LIGHT
           Positioned(
             top: 5,
             right: 10,
             child: IconButton(
                 onPressed: () async {
+                  HapticFeedback.heavyImpact();
 
                   List<BluetoothService> services =
                   await widget.dispositivo.discoverServices();
@@ -306,12 +379,38 @@ class MapUiBodyState extends State<MapUiBody> {
                     }
                   });
                 },
-                icon: const Icon(
-                  UniconsLine.lightbulb_alt,
+                icon: Icon(
+                  lightStatus != 0 ? Icons.lightbulb_rounded : Icons.lightbulb_outline ,
                   size: 30,
+                  color: lightStatus != 0 ? Colors.amber : Colors.white,
                 )),
           ),
+          Visibility(
+            visible: autoLight == 1,
+            child: Positioned(
+              top: 35,
+              right: 2,
+              child: TextButton(
+                onPressed: () async {
+                  List<BluetoothService> services =
+                      await widget.dispositivo.discoverServices();
+                  for (var service in services) {
+                    var characteristics = service.characteristics;
+                    for (BluetoothCharacteristic c
+                    in characteristics) {
+                      await c.write(utf8.encode('auto_light'));
 
+                    }
+                  }
+                },
+                child: const Text('AUTO', style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  // decoration: autoLight == 1 ? TextDecoration.none : TextDecoration.lineThrough,
+                ),),
+              )
+            ),
+          ),
           Positioned(
             bottom: 0,
             right: 10,
